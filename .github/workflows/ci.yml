@@ -1,0 +1,98 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+    
+    - name: Run tests
+      run: go test -v -race ./...
+    
+    - name: Run go fmt
+      run: go fmt ./...
+    
+    - name: Run go vet
+      run: go vet ./...
+
+  build:
+    name: Build
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        include:
+          - os: macos-latest
+            artifact: istoria-darwin-arm64
+            ext: ''
+          - os: ubuntu-latest
+            artifact: istoria-linux-amd64
+            ext: ''
+          - os: windows-latest
+            artifact: istoria-windows-amd64
+            ext: .exe
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+    
+    - name: Build
+      run: |
+        GOOS=$(echo ${{ matrix.os }} | sed 's/-latest//')
+        GOARCH=amd64
+        if [ "${{ matrix.os }}" = "macos-latest" ]; then
+          GOARCH=arm64
+        fi
+        GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w" -o istoria-${{ matrix.artifact }}${{ matrix.ext }} .
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: istoria-${{ matrix.artifact }}${{ matrix.ext }}
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: artifacts/**/*
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
