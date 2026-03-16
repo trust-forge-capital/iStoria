@@ -1,0 +1,18 @@
+[
+  {
+    "id": "rule-cpu-high",
+    "metric": "cpu.usage",
+    "op": "gt",
+    "value": 80,
+    "for": "3m",
+    "enabled": true
+  },
+  {
+    "id": "rule-disk-root-high",
+    "metric": "disk.root.used_percent",
+    "op": "gt",
+    "value": 90,
+    "for": "1m",
+    "enabled": true
+  }
+]

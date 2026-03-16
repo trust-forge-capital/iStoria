@@ -2,17 +2,18 @@ package collect
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
-	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/net"
-	"github.com/shirou/gopsutil/v4/cpu"
 )
 
 // DarwinCollector implements Collector for macOS
@@ -260,20 +261,81 @@ func (c *DarwinCollector) Net() (*NetUsage, error) {
 	}, nil
 }
 
-// Sensors returns sensor data (stub for macOS without istats)
+// Sensors returns sensor data for macOS using ioreg
 func (c *DarwinCollector) Sensors() (*SensorData, error) {
-	return &SensorData{
+	data := &SensorData{
 		Temperatures: []SensorInfo{},
 		Fans:         []SensorInfo{},
 		Voltages:     []SensorInfo{},
 		Power:        []SensorInfo{},
 		HasSensors:   false,
-	}, nil
+	}
+
+	// Try to get CPU temperature from ioreg
+	cmd := exec.Command("ioreg", "-c", "AppleSMC", "-r", "-d", "1", "-a")
+	output, err := cmd.Output()
+	if err == nil {
+		// Parse ioreg JSON output for temperature sensors
+		var result map[string]interface{}
+		if json.Unmarshal(output, &result) == nil {
+			if children, ok := result["Children"].([]interface{}); ok {
+				for _, child := range children {
+					if c, ok := child.(map[string]interface{}); ok {
+						if c["key"] != nil {
+							key := c["key"].(string)
+							if strings.Contains(key, "TC") || strings.Contains(key, "Tp") {
+								if val, ok := c["CurrentValue"]; ok {
+									if fval, ok := val.(float64); ok {
+										tempC := fval / 256.0
+										sensorName := strings.Replace(key, "0x", "", -1)
+										data.Temperatures = append(data.Temperatures, SensorInfo{
+											Name:       sensorName,
+											Value:      tempC,
+											Unit:       "°C",
+											Critical:   tempC > 95,
+											SensorType: "temperature",
+										})
+										data.HasSensors = true
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Try to get fan speed from ioreg
+	cmd = exec.Command("ioreg", "-c", "AppleFan", "-r", "-d", "1", "-a")
+	output, err = cmd.Output()
+	if err == nil {
+		var result []interface{}
+		if json.Unmarshal(output, &result) == nil {
+			for _, item := range result {
+				if m, ok := item.(map[string]interface{}); ok {
+					if fanNum, ok := m["FanNumber"].(float64); ok {
+						if current, ok := m["CurrentValue"].(float64); ok {
+							data.Fans = append(data.Fans, SensorInfo{
+								Name:       fmt.Sprintf("Fan %.0f", fanNum),
+								Value:      current,
+								Unit:       "RPM",
+								SensorType: "fan",
+							})
+							data.HasSensors = true
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return data, nil
 }
 
-// Power returns power/battery information
+// Power returns power/battery information for macOS using ioreg
 func (c *DarwinCollector) Power() (*PowerInfo, error) {
-	return &PowerInfo{
+	info := &PowerInfo{
 		HasBattery:    false,
 		Charging:      false,
 		Percent:       0,
@@ -283,6 +345,96 @@ func (c *DarwinCollector) Power() (*PowerInfo, error) {
 		Volts:         0,
 		Watts:         0,
 		CycleCount:    0,
-		Health:        "Unknown",
-	}, nil
+		Health:        "Good",
+	}
+
+	// Get battery info from ioreg
+	cmd := exec.Command("ioreg", "-c", "AppleSmartBattery", "-r", "-a")
+	output, err := cmd.Output()
+	if err == nil {
+		var result []interface{}
+		if json.Unmarshal(output, &result) == nil {
+			for _, item := range result {
+				if m, ok := item.(map[string]interface{}); ok {
+					// Check if battery exists
+					if isPresent, ok := m["IsPresent"].(float64); ok && isPresent == 1 {
+						info.HasBattery = true
+
+						// Battery percentage
+						if percent, ok := m["CurrentCapacity"].(float64); ok {
+							if max, ok := m["MaxCapacity"].(float64); ok && max > 0 {
+								info.Percent = int(percent / max * 100)
+							}
+						}
+
+						// Charging status
+						if charging, ok := m["IsCharging"].(float64); ok && charging == 1 {
+							info.Charging = true
+							info.PowerPlugged = true
+						}
+
+						// Power source
+						if powerSource, ok := m["PowerSourceState"].(string); ok {
+							if powerSource == "AC Power" {
+								info.PowerPlugged = true
+							} else {
+								info.PowerPlugged = false
+							}
+						}
+
+						// Time remaining (in minutes)
+						if timeToEmpty, ok := m["TimeToEmpty"].(float64); ok && timeToEmpty > 0 {
+							info.TimeRemaining = int(timeToEmpty)
+						} else if timeToFull, ok := m["TimeToFullCharge"].(float64); ok && timeToFull > 0 {
+							info.TimeRemaining = int(timeToFull)
+						}
+
+						// Cycle count
+						if cycleCount, ok := m["CycleCount"].(float64); ok {
+							info.CycleCount = int(cycleCount)
+						}
+
+						// Battery health
+						if health, ok := m["BatteryHealth"].(string); ok {
+							info.Health = health
+						} else {
+							// Estimate health based on cycle count
+							if info.CycleCount > 1000 {
+								info.Health = "Fair"
+							} else if info.CycleCount > 500 {
+								info.Health = "Good"
+							} else {
+								info.Health = "Excellent"
+							}
+						}
+
+						// Voltage
+						if voltage, ok := m["Voltage"].(float64); ok {
+							info.Volts = voltage / 1000.0 // mV to V
+						}
+
+						// Amperage
+						if amperage, ok := m["Amperage"].(float64); ok {
+							info.Amps = amperage / 1000.0 // mA to A
+							info.Watts = info.Volts * info.Amps
+						}
+
+						// Design capacity
+						if designCap, ok := m["DesignCapacity"].(float64); ok {
+							if maxCap, ok := m["MaxCapacity"].(float64); ok && designCap > 0 {
+								healthPct := maxCap / designCap * 100
+								if healthPct < 50 {
+									info.Health = "Replace Soon"
+								} else if healthPct < 80 {
+									info.Health = "Fair"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return info, nil
 }

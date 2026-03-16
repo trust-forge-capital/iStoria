@@ -1,14 +1,18 @@
 package collect
 
 import (
+	"os/exec"
+	"regexp"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
-	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/net"
-	"github.com/shirou/gopsutil/v4/cpu"
 )
 
 // WindowsCollector implements Collector for Windows
@@ -191,29 +195,87 @@ func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr)))
 }
 
-// Sensors returns sensor information (limited on Windows)
+// Sensors returns sensor information for Windows
 func (c *WindowsCollector) Sensors() (*SensorData, error) {
-	return &SensorData{
+	data := &SensorData{
 		Temperatures: []SensorInfo{},
 		Fans:         []SensorInfo{},
 		Voltages:     []SensorInfo{},
 		Power:        []SensorInfo{},
 		HasSensors:   false,
-	}, nil
-}
-
-// Power returns battery/power information
-func (c *WindowsCollector) Power() (*PowerInfo, error) {
-	v, err := mem.VirtualMemory()
-	if err != nil {
-		return nil, err
 	}
 
-	return &PowerInfo{
-		HasBattery:   v.Available > 0,
-		Percent:       int(v.UsedPercent),
-		PowerPlugged: true,
-	}, nil
+	// Windows doesn't have standardized sensor APIs without additional libraries
+	// Common approaches:
+	// 1. OpenHardwareMonitor WMI
+	// 2. LibreHardwareMonitor
+	// 3. SpeedFan
+	
+	// For now, we'll try to read from registry or common locations
+	// Note: Full sensor support requires external libraries like go-hardware-monitor
+	
+	return data, nil
+}
+
+// Power returns battery/power information for Windows
+func (c *WindowsCollector) Power() (*PowerInfo, error) {
+	info := &PowerInfo{
+		HasBattery:    false,
+		Charging:      false,
+		Percent:       0,
+		TimeRemaining: 0,
+		PowerPlugged:  true,
+		Amps:          0,
+		Volts:         0,
+		Watts:         0,
+		CycleCount:    0,
+		Health:        "Unknown",
+	}
+
+	// Try to get battery status using systeminfo or WMI
+	// Note: Full battery support requires golang.org/x/sys/windows
+	
+	// Check memory as a fallback for power status
+	_, err := mem.VirtualMemory()
+	if err == nil {
+		// If we have memory info, system is running
+		info.PowerPlugged = true
+	}
+	
+	// Try to use systeminfo command as fallback
+	cmd := exec.Command("systeminfo")
+	output, err := cmd.Output()
+	if err == nil {
+		outputStr := string(output)
+		
+		// Check for battery status
+		if strings.Contains(outputStr, "Battery") {
+			info.HasBattery = true
+			
+			// Parse battery percentage from systeminfo output
+			lines := strings.Split(outputStr, "\n")
+			for _, line := range lines {
+				if strings.Contains(line, "Battery") && strings.Contains(line, "%") {
+					// Try to extract percentage
+					re := regexp.MustCompile(`(\d+)%`)
+					matches := re.FindStringSubmatch(line)
+					if len(matches) > 1 {
+						info.Percent, _ = strconv.Atoi(matches[1])
+					}
+				}
+			}
+		}
+	}
+	
+	// If no battery detected, it's likely a desktop
+	if !info.HasBattery {
+		info.HasBattery = false
+		info.Percent = 0
+		info.PowerPlugged = true
+		info.Health = "N/A"
+	}
+
+	return info, nil
 }
 
 var _ Collector = (*WindowsCollector)(nil)
