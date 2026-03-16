@@ -83,11 +83,13 @@ jobs:
         echo "Building version: $VERSION"
     
     - name: Build
+      shell: bash
       env:
         GOOS: ${{ matrix.goos }}
         GOARCH: ${{ matrix.goarch }}
+        VERSION: ${{ github.ref_name }}
       run: |
-        VERSION=${{ steps.version.outputs.version }}
+        VERSION="${VERSION#refs/tags/}"
         go build -ldflags="-s -w -X main.version=${VERSION}" -o ${{ matrix.artifact }}${{ matrix.ext }} .
     
     - name: Upload artifact
