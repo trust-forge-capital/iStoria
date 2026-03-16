@@ -1,6 +1,6 @@
 module github.com/maxzhang/istoria
 
-go 1.24.0
+go 1.23.0
 
 require (
 	github.com/shirou/gopsutil/v4 v4.24.10
