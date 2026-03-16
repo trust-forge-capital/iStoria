@@ -10,7 +10,7 @@ var alertCmd = &cobra.Command{
 var alertListCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List alerts",
-	Run: func(cmd *cobra.Command, args []string) {},
+	Run:   func(cmd *cobra.Command, args []string) {},
 }
 
 func init() {

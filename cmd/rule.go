@@ -10,7 +10,7 @@ var ruleCmd = &cobra.Command{
 var ruleListCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List rules",
-	Run: func(cmd *cobra.Command, args []string) {},
+	Run:   func(cmd *cobra.Command, args []string) {},
 }
 
 func init() {

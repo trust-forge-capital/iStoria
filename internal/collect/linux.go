@@ -6,14 +6,15 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
-	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/net"
-	"github.com/shirou/gopsutil/v4/cpu"
 )
 
 // LinuxCollector implements Collector for Linux
@@ -56,11 +57,37 @@ func (c *LinuxCollector) CPU() (*CPUInfo, error) {
 	var model string
 	var cores, threads int
 	var freq, freqMin, freqMax uint64
+
 	if len(cpuInfo) > 0 {
 		model = cpuInfo[0].ModelName
+		// Use Cores from cpu.Info
 		cores = int(cpuInfo[0].Cores)
-		threads = int(cpuInfo[0].Cores)
 		freq = uint64(cpuInfo[0].Mhz * 1_000_000)
+
+		// Get logical CPU count from cpu.Counts
+		logicalCPUs, _ := cpu.Counts(true)
+		if logicalCPUs > 0 {
+			threads = logicalCPUs
+		}
+
+		// If cores/threads are 0 or 1, try to get from /proc/cpuinfo
+		if cores <= 1 || threads <= 1 {
+			procCores, procThreads := c.getCPUCoresFromProc()
+			if procCores > cores {
+				cores = procCores
+			}
+			if procThreads > threads {
+				threads = procThreads
+			}
+		}
+	}
+
+	// If still invalid, try sysfs
+	if cores <= 1 {
+		if cpus, err := c.getCPUCountFromSysfs(); err == nil && cpus > 0 {
+			cores = cpus
+			threads = cpus * 2 // Assume hyperthreading
+		}
 	}
 
 	if freq == 0 {
@@ -68,13 +95,89 @@ func (c *LinuxCollector) CPU() (*CPUInfo, error) {
 	}
 
 	return &CPUInfo{
-		Model:       model,
-		Cores:       cores,
-		Threads:     threads,
-		Frequency:   freq,
+		Model:        model,
+		Cores:        cores,
+		Threads:      threads,
+		Frequency:    freq,
 		FrequencyMin: freqMin,
 		FrequencyMax: freqMax,
 	}, nil
+}
+
+// getCPUCoresFromProc reads CPU core info from /proc/cpuinfo
+func (c *LinuxCollector) getCPUCoresFromProc() (cores int, threads int) {
+	data, err := os.ReadFile("/proc/cpuinfo")
+	if err != nil {
+		return 1, 1
+	}
+
+	lines := strings.Split(string(data), "\n")
+
+	var physicalIDs []int
+	var cpuCores []int
+	var siblings []int
+
+	for _, line := range lines {
+		if strings.HasPrefix(line, "processor") {
+			threads++ // Each processor is a logical thread
+		}
+		if strings.HasPrefix(line, "physical id") {
+			id := strings.TrimSpace(strings.Split(line, ":")[1])
+			pid, _ := strconv.Atoi(id)
+			physicalIDs = append(physicalIDs, pid)
+		}
+		if strings.HasPrefix(line, "cpu cores") {
+			val := strings.TrimSpace(strings.Split(line, ":")[1])
+			c, _ := strconv.Atoi(val)
+			cpuCores = append(cpuCores, c)
+		}
+		if strings.HasPrefix(line, "siblings") {
+			val := strings.TrimSpace(strings.Split(line, ":")[1])
+			s, _ := strconv.Atoi(val)
+			siblings = append(siblings, s)
+		}
+	}
+
+	// Calculate unique physical CPUs
+	uniquePhysical := make(map[int]bool)
+	for _, pid := range physicalIDs {
+		uniquePhysical[pid] = true
+	}
+
+	if len(uniquePhysical) > 0 && len(cpuCores) > 0 {
+		cores = len(uniquePhysical) * cpuCores[0]
+	}
+
+	if threads <= 0 {
+		threads = cores * 2
+	}
+
+	return cores, threads
+}
+
+// getCPUCountFromSysfs gets CPU count from sysfs
+func (c *LinuxCollector) getCPUCountFromSysfs() (int, error) {
+	data, err := os.ReadFile("/sys/devices/system/cpu/online")
+	if err != nil {
+		return 0, err
+	}
+
+	// Parse "0-11" or "0,1,2,3" format
+	parts := strings.Split(strings.TrimSpace(string(data)), ",")
+	var count int
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if strings.Contains(part, "-") {
+			rangeParts := strings.Split(part, "-")
+			start, _ := strconv.Atoi(rangeParts[0])
+			end, _ := strconv.Atoi(rangeParts[1])
+			count += end - start + 1
+		} else {
+			count++
+		}
+	}
+
+	return count, nil
 }
 
 func (c *LinuxCollector) getCPUFreqFromProc() (uint64, uint64, uint64) {

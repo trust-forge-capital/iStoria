@@ -19,7 +19,7 @@ func TestClearScreen(t *testing.T) {
 func TestSetupLiveMode(t *testing.T) {
 	sigChan, cleanup := SetupLiveMode()
 	defer cleanup()
-	
+
 	if sigChan == nil {
 		t.Error("SetupLiveMode returned nil channel")
 	}
@@ -32,7 +32,7 @@ func TestLiveConfigStruct(t *testing.T) {
 		Interval: 1000,
 		NoClear:  false,
 	}
-	
+
 	if !config.Enabled {
 		t.Error("Enabled should be true")
 	}

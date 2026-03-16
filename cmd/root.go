@@ -37,9 +37,9 @@ func init() {
 
 // LiveConfig holds live mode configuration
 type LiveConfig struct {
-	Enabled   bool
-	Interval  time.Duration
-	NoClear   bool
+	Enabled  bool
+	Interval time.Duration
+	NoClear  bool
 }
 
 // GetLiveConfig extracts live mode configuration from command
@@ -54,9 +54,9 @@ func GetLiveConfig(cmd *cobra.Command) *LiveConfig {
 	}
 
 	return &LiveConfig{
-		Enabled:   live,
-		Interval:  time.Duration(interval) * time.Millisecond,
-		NoClear:   noClear,
+		Enabled:  live,
+		Interval: time.Duration(interval) * time.Millisecond,
+		NoClear:  noClear,
 	}
 }
 

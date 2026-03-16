@@ -18,11 +18,11 @@ func TestCPUInfoFields(t *testing.T) {
 		Model:            "Apple M4",
 		Cores:            10,
 		Threads:          20,
-		UsagePercent:    50.0,
+		UsagePercent:     50.0,
 		UserPercent:      30.0,
 		SystemPercent:    20.0,
 		IdlePercent:      50.0,
-		AppleSilicon:    true,
+		AppleSilicon:     true,
 		PerformanceCores: 4,
 		EfficiencyCores:  6,
 	}
@@ -41,16 +41,16 @@ func TestCPUInfoFields(t *testing.T) {
 // TestMemInfoFields tests MemInfo structure
 func TestMemInfoFields(t *testing.T) {
 	info := MemInfo{
-		Total:         16000000000,
-		Used:          8000000000,
-		Free:          4000000000,
-		Available:     8000000000,
-		UsedPercent:   50.0,
-		SwapTotal:     2000000000,
-		SwapUsed:      1000000000,
-		SwapFree:      1000000000,
-		Wired:         2000000000,
-		Compressed:    2000000000,
+		Total:       16000000000,
+		Used:        8000000000,
+		Free:        4000000000,
+		Available:   8000000000,
+		UsedPercent: 50.0,
+		SwapTotal:   2000000000,
+		SwapUsed:    1000000000,
+		SwapFree:    1000000000,
+		Wired:       2000000000,
+		Compressed:  2000000000,
 	}
 
 	if info.Total != 16000000000 {
@@ -64,15 +64,15 @@ func TestMemInfoFields(t *testing.T) {
 // TestDiskInfoFields tests DiskInfo structure
 func TestDiskInfoFields(t *testing.T) {
 	info := DiskInfo{
-		Path:         "/",
-		Filesystem:   "apfs",
-		Total:        500000000000,
-		Used:         250000000000,
-		Available:    250000000000,
-		UsedPercent:  50.0,
-		InodesTotal:  1000000,
-		InodesUsed:   500000,
-		InodesAvail:  500000,
+		Path:        "/",
+		Filesystem:  "apfs",
+		Total:       500000000000,
+		Used:        250000000000,
+		Available:   250000000000,
+		UsedPercent: 50.0,
+		InodesTotal: 1000000,
+		InodesUsed:  500000,
+		InodesAvail: 500000,
 	}
 
 	if info.Path != "/" {
@@ -86,14 +86,14 @@ func TestDiskInfoFields(t *testing.T) {
 // TestPlatformInfoFields tests PlatformInfo structure
 func TestPlatformInfoFields(t *testing.T) {
 	info := PlatformInfo{
-		OS:            "darwin",
-		Arch:          "arm64",
-		Hostname:      "test-mac",
-		Kernel:        "23.0.0",
-		Uptime:        3600,
-		BootTime:      1700000000,
-		Procs:         100,
-		AppleSilicon:  true,
+		OS:           "darwin",
+		Arch:         "arm64",
+		Hostname:     "test-mac",
+		Kernel:       "23.0.0",
+		Uptime:       3600,
+		BootTime:     1700000000,
+		Procs:        100,
+		AppleSilicon: true,
 	}
 
 	if info.OS != "darwin" {
@@ -107,14 +107,14 @@ func TestPlatformInfoFields(t *testing.T) {
 // TestNetInfoFields tests NetInfo structure
 func TestNetInfoFields(t *testing.T) {
 	info := NetInfo{
-		Name:        "en0",
-		MTU:         1500,
+		Name:         "en0",
+		MTU:          1500,
 		HardwareAddr: "aa:bb:cc:dd:ee:ff",
-		Flags:       "up,running",
-		IP4:         "192.168.1.100",
-		IP6:         "fd00::1",
-		RxBytes:     1000000,
-		TxBytes:     2000000,
+		Flags:        "up,running",
+		IP4:          "192.168.1.100",
+		IP6:          "fd00::1",
+		RxBytes:      1000000,
+		TxBytes:      2000000,
 	}
 
 	if info.Name != "en0" {

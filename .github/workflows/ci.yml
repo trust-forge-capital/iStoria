@@ -51,6 +51,11 @@ jobs:
             goarch: arm64
             artifact: istoria-darwin-arm64
             ext: ''
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            artifact: istoria-darwin-amd64
+            ext: ''
           - os: ubuntu-latest
             goos: linux
             goarch: amd64

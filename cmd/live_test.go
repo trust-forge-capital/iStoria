@@ -9,10 +9,10 @@ import (
 func TestGetLiveConfig(t *testing.T) {
 	tests := []struct {
 		name           string
-		liveFlag      bool
-		intervalFlag  int
-		noClearFlag  bool
-		expectEnabled bool
+		liveFlag       bool
+		intervalFlag   int
+		noClearFlag    bool
+		expectEnabled  bool
 		expectInterval time.Duration
 	}{
 		{"default", false, 1000, false, false, 1000 * time.Millisecond},
@@ -25,7 +25,7 @@ func TestGetLiveConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := getLiveConfigFromFlags(tt.liveFlag, tt.intervalFlag, tt.noClearFlag)
-			
+
 			if config.Enabled != tt.expectEnabled {
 				t.Errorf("Enabled = %v; want %v", config.Enabled, tt.expectEnabled)
 			}
