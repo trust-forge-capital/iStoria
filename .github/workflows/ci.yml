@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    name: Test
+    name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -35,20 +35,25 @@ jobs:
       run: go vet ./...
 
   build:
-    name: Build
+    name: Build ${{ matrix.os }}
     needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
         include:
           - os: macos-latest
+            goos: darwin
+            goarch: arm64
             artifact: istoria-darwin-arm64
             ext: ''
           - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
             artifact: istoria-linux-amd64
             ext: ''
           - os: windows-latest
+            goos: windows
+            goarch: amd64
             artifact: istoria-windows-amd64
             ext: .exe
     
@@ -62,19 +67,17 @@ jobs:
         go-version: '1.23'
     
     - name: Build
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
       run: |
-        GOOS=$(echo ${{ matrix.os }} | sed 's/-latest//')
-        GOARCH=amd64
-        if [ "${{ matrix.os }}" = "macos-latest" ]; then
-          GOARCH=arm64
-        fi
-        GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w" -o istoria-${{ matrix.artifact }}${{ matrix.ext }} .
+        go build -ldflags="-s -w" -o ${{ matrix.artifact }}${{ matrix.ext }} .
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact }}
-        path: istoria-${{ matrix.artifact }}${{ matrix.ext }}
+        path: ${{ matrix.artifact }}${{ matrix.ext }}
 
   release:
     name: Release
@@ -87,11 +90,15 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: artifacts
+        merge-multiple: true
+    
+    - name: List artifacts
+      run: ls -la artifacts/
     
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
-        files: artifacts/**/*
+        files: artifacts/*
         draft: false
         prerelease: false
       env:
