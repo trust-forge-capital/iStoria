@@ -73,6 +73,7 @@ jobs:
     
     - name: Get version
       id: version
+      shell: bash
       run: |
         VERSION=${{ github.ref_name }}
         if [[ "$VERSION" == "refs/tags/"* ]]; then
