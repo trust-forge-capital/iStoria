@@ -151,6 +151,11 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         body_path: release_body.md
+        files: |
+          artifacts/istoria-darwin-arm64
+          artifacts/istoria-darwin-amd64
+          artifacts/istoria-linux-amd64
+          artifacts/istoria-windows-amd64.exe
         draft: false
         prerelease: false
       env:
