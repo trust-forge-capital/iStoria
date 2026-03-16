@@ -30,49 +30,40 @@ var powerCmd = &cobra.Command{
 			return
 		}
 
-		colorReset := ""
-		if noColor {
-			colorReset = ""
-		}
-
-		fmt.Printf("%s=== Power Information ===%s\n", "", colorReset)
+		_ = noColor // reserved for future color support
 
 		if !powerData.HasBattery {
-			fmt.Println("No battery detected (desktop or AC power)")
+			fmt.Println("Power: no battery")
 			return
 		}
-
-		fmt.Printf("Battery: %d%%\n", powerData.Percent)
 
 		status := "Discharging"
 		if powerData.Charging {
 			status = "Charging"
 		} else if powerData.PowerPlugged {
-			status = "Plugged In"
+			status = "Plugged"
 		}
-		fmt.Printf("Status: %s\n", status)
 
+		line := fmt.Sprintf("Bat: %d%% | %s", powerData.Percent, status)
 		if powerData.TimeRemaining > 0 {
 			hrs := powerData.TimeRemaining / 60
 			mins := powerData.TimeRemaining % 60
 			if powerData.Charging {
-				fmt.Printf("Time to Full: %d:%02d\n", hrs, mins)
+				line += fmt.Sprintf(" | Full:%d:%02d", hrs, mins)
 			} else {
-				fmt.Printf("Time Remaining: %d:%02d\n", hrs, mins)
+				line += fmt.Sprintf(" | Left:%d:%02d", hrs, mins)
 			}
 		}
-
 		if powerData.Watts > 0 {
-			fmt.Printf("Power Draw: %.1f W\n", powerData.Watts)
+			line += fmt.Sprintf(" | %.1fW", powerData.Watts)
 		}
-
 		if powerData.CycleCount > 0 {
-			fmt.Printf("Cycle Count: %d\n", powerData.CycleCount)
+			line += fmt.Sprintf(" | Cycles:%d", powerData.CycleCount)
 		}
-
 		if powerData.Health != "" {
-			fmt.Printf("Health: %s\n", powerData.Health)
+			line += fmt.Sprintf(" | Health:%s", powerData.Health)
 		}
+		fmt.Println(line)
 	},
 }
 

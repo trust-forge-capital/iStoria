@@ -45,41 +45,34 @@ var cpuCmd = &cobra.Command{
 				return
 			}
 
-			colorReset := ""
-			if noColor {
-				colorReset = ""
-			}
+			_ = noColor // reserved for future color support
 
-			fmt.Printf("%s=== CPU Information ===%s\n", "", colorReset)
-			fmt.Printf("Model: %s\n", cpuInfo.Model)
-			fmt.Printf("Physical Cores: %d\n", cpuInfo.Cores)
-			fmt.Printf("Logical Threads: %d\n", cpuInfo.Threads)
-
+			line := fmt.Sprintf("CPU: %s | %dC/%dT", cpuInfo.Model, cpuInfo.Cores, cpuInfo.Threads)
 			if cpuInfo.AppleSilicon {
-				fmt.Println()
-				fmt.Printf("%s--- Apple Silicon ---%s\n", "", colorReset)
-				fmt.Printf("Performance Cores: %d\n", cpuInfo.PerformanceCores)
-				fmt.Printf("Efficiency Cores: %d\n", cpuInfo.EfficiencyCores)
+				line += fmt.Sprintf(" | P:%d E:%d", cpuInfo.PerformanceCores, cpuInfo.EfficiencyCores)
 			}
-
-			fmt.Println()
-			fmt.Printf("%s--- Usage ---%s\n", "", colorReset)
-			fmt.Printf("Total:     %6.1f%%\n", cpuInfo.UsagePercent)
-			fmt.Printf("User:     %6.1f%%\n", cpuInfo.UserPercent)
-			fmt.Printf("System:   %6.1f%%\n", cpuInfo.SystemPercent)
-			fmt.Printf("Idle:     %6.1f%%\n", cpuInfo.IdlePercent)
-
-			if len(cpuPercent.PerCPU) > 0 {
-				fmt.Println()
-				fmt.Printf("%s--- Per-Core Usage ---%s\n", "", colorReset)
-				for i, usage := range cpuPercent.PerCPU {
-					fmt.Printf("Core %2d: %6.1f%%\n", i, usage)
-				}
-			}
-
 			if cpuInfo.Frequency > 0 {
+				line += fmt.Sprintf(" | %s", formatHz(cpuInfo.Frequency))
+			}
+			fmt.Println(line)
+			fmt.Printf("Usage: %.1f%% | User: %.1f%% | Sys: %.1f%% | Idle: %.1f%%\n",
+				cpuInfo.UsagePercent, cpuInfo.UserPercent, cpuInfo.SystemPercent, cpuInfo.IdlePercent)
+
+			if cpuPercent != nil && len(cpuPercent.PerCPU) > 0 {
+				fmt.Print("PerCore: ")
+				for i, usage := range cpuPercent.PerCPU {
+					if i > 0 {
+						fmt.Print(" ")
+					}
+					fmt.Printf("C%d:%.0f%%", i, usage)
+					if i >= 7 {
+						if len(cpuPercent.PerCPU) > 8 {
+							fmt.Print(" ...")
+						}
+						break
+					}
+				}
 				fmt.Println()
-				fmt.Printf("Frequency: %s\n", formatHz(cpuInfo.Frequency))
 			}
 		}
 

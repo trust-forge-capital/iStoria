@@ -3,11 +3,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/maxzhang/istoria/internal/collect"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var netCmd = &cobra.Command{
@@ -42,57 +40,21 @@ var netCmd = &cobra.Command{
 			return
 		}
 
-		colorReset := ""
-		if noColor {
-			colorReset = ""
-		}
+		_ = noColor // reserved for future color support
 
-		fmt.Printf("%s=== Network Interfaces ===%s\n", "", colorReset)
-		fmt.Printf("%-10s %-18s %-18s %12s %12s\n",
-			"Interface", "IPv4", "IPv6", "RX", "TX")
-		fmt.Println()
-
+		fmt.Printf("%-8s %-15s %10s %10s\n", "Iface", "IP", "RX", "TX")
 		for _, ni := range netData.Interfaces {
-			// Skip loopback for cleaner output
 			if ni.Name == "lo0" || ni.Name == "lo" {
 				continue
 			}
-			fmt.Printf("%-10s %-18s %-18s %12s %12s\n",
+			fmt.Printf("%-8s %-15s %10s %10s\n",
 				ni.Name,
 				ni.IP4,
-				truncateIP(ni.IP6),
 				formatBytes(ni.RxBytes),
 				formatBytes(ni.TxBytes))
 		}
-
-		fmt.Println()
-		fmt.Printf("Total RX: %s | Total TX: %s\n",
-			formatBytes(netData.TotalRx),
-			formatBytes(netData.TotalTx))
+		fmt.Printf("Total: RX:%s | TX:%s\n", formatBytes(netData.TotalRx), formatBytes(netData.TotalTx))
 	},
-}
-
-func truncateIP(ip string) string {
-	// Handle empty or very long IPs
-	if ip == "" {
-		return "-"
-	}
-	if len(ip) > 18 {
-		// Remove IPv6 prefix for display
-		if strings.HasPrefix(ip, "fe80::") {
-			ip = ip[:min(len(ip), 15)]
-		} else if len(ip) > 15 {
-			return ip[:12] + "..."
-		}
-	}
-	return ip
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func init() {

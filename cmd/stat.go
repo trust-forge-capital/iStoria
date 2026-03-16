@@ -73,51 +73,36 @@ var statCmd = &cobra.Command{
 			return
 		}
 
-		// Human readable output
-		colorReset := ""
-		if noColor {
-			colorReset = ""
-		}
+		// Human readable output (compact)
+		_ = noColor // reserved for future color support
 
-		fmt.Printf("%s=== %s ===%s\n", "", platform.Hostname, colorReset)
-		fmt.Printf("OS: %s (%s) | Uptime: %s\n", platform.OS, platform.Arch, stat.Uptime)
-		fmt.Printf("Kernel: %s\n", platform.Kernel)
-		fmt.Println()
+		fmt.Printf("Host: %s | OS: %s/%s | Up: %s | Kernel: %s\n", platform.Hostname, platform.OS, platform.Arch, stat.Uptime, platform.Kernel)
 
-		fmt.Printf("%s--- CPU ---%s\n", "", colorReset)
-		fmt.Printf("Model: %s\n", cpuInfo.Model)
-		fmt.Printf("Cores: %d | Threads: %d\n", cpuInfo.Cores, cpuInfo.Threads)
+		cpuLine := fmt.Sprintf("CPU: %s | %dC/%dT", cpuInfo.Model, cpuInfo.Cores, cpuInfo.Threads)
 		if cpuInfo.AppleSilicon {
-			fmt.Printf("P-cores: %d | E-cores: %d\n", cpuInfo.PerformanceCores, cpuInfo.EfficiencyCores)
+			cpuLine += fmt.Sprintf(" | P:%d E:%d", cpuInfo.PerformanceCores, cpuInfo.EfficiencyCores)
 		}
-		fmt.Printf("Usage: %.1f%%\n", cpuInfo.UsagePercent)
-		fmt.Println()
+		cpuLine += fmt.Sprintf(" | %.1f%%", cpuInfo.UsagePercent)
+		fmt.Println(cpuLine)
 
-		fmt.Printf("%s--- Memory ---%s\n", "", colorReset)
-		fmt.Printf("Total: %s | Used: %s (%.1f%%)\n",
+		fmt.Printf("Mem: %s | Used:%s(%.0f%%) | Avail:%s\n",
 			formatBytes(memInfo.Total),
 			formatBytes(memInfo.Used),
-			memInfo.UsedPercent)
-		fmt.Printf("Available: %s\n", formatBytes(memInfo.Available))
-		fmt.Println()
+			memInfo.UsedPercent,
+			formatBytes(memInfo.Available))
 
-		fmt.Printf("%s--- Disk ---%s\n", "", colorReset)
 		if len(diskInfo.Disks) > 0 {
 			d := diskInfo.Disks[0]
-			fmt.Printf("Mount: %s\n", d.Path)
-			fmt.Printf("Total: %s | Used: %s (%.1f%%)\n",
+			fmt.Printf("Disk: %s | %s | Used:%s(%.0f%%) | Avail:%s\n",
+				d.Path,
 				formatBytes(d.Total),
 				formatBytes(d.Used),
-				d.UsedPercent)
-			fmt.Printf("Available: %s\n", formatBytes(d.Available))
-		} else {
-			fmt.Println("No disk info")
+				d.UsedPercent,
+				formatBytes(d.Available))
 		}
 
 		if stat.LoadAvg != "" {
-			fmt.Println()
-			fmt.Printf("%s--- Load ---%s\n", "", colorReset)
-			fmt.Printf("Load Avg: %s\n", stat.LoadAvg)
+			fmt.Printf("Load: %s\n", stat.LoadAvg)
 		}
 	},
 }

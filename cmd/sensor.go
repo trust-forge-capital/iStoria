@@ -30,50 +30,81 @@ var sensorCmd = &cobra.Command{
 			return
 		}
 
-		colorReset := ""
-		if noColor {
-			colorReset = ""
-		}
+		_ = noColor // reserved for future color support
 
 		if !sensorData.HasSensors && len(sensorData.Temperatures) == 0 && len(sensorData.Fans) == 0 {
-			fmt.Println("No sensor data available on this system.")
-			fmt.Println("Note: On macOS, install 'istats' for sensor support.")
-			fmt.Println("On Linux, ensure 'lm-sensors' is installed.")
+			fmt.Println("No sensor data. Install istats (macOS) or lm-sensors (Linux).")
 			return
 		}
 
 		if len(sensorData.Temperatures) > 0 {
-			fmt.Printf("%s--- Temperatures ---%s\n", "", colorReset)
-			for _, t := range sensorData.Temperatures {
+			fmt.Print("Temp: ")
+			for i, t := range sensorData.Temperatures {
+				if i > 0 {
+					fmt.Print(" ")
+				}
 				indicator := ""
 				if t.Critical {
-					indicator = " 🔥"
+					indicator = "🔥"
 				}
-				fmt.Printf("%-25s %7.1f %s%s\n", t.Name, t.Value, t.Unit, indicator)
+				fmt.Printf("%s=%.1f%s%s", t.Name, t.Value, t.Unit, indicator)
+				if i >= 5 {
+					if len(sensorData.Temperatures) > 6 {
+						fmt.Print(" ...")
+					}
+					break
+				}
 			}
 			fmt.Println()
 		}
 
 		if len(sensorData.Fans) > 0 {
-			fmt.Printf("%s--- Fans ---%s\n", "", colorReset)
-			for _, f := range sensorData.Fans {
-				fmt.Printf("%-25s %7.0f %s\n", f.Name, f.Value, f.Unit)
+			fmt.Print("Fan: ")
+			for i, f := range sensorData.Fans {
+				if i > 0 {
+					fmt.Print(" ")
+				}
+				fmt.Printf("%s=%.0f%s", f.Name, f.Value, f.Unit)
+				if i >= 5 {
+					if len(sensorData.Fans) > 6 {
+						fmt.Print(" ...")
+					}
+					break
+				}
 			}
 			fmt.Println()
 		}
 
 		if len(sensorData.Voltages) > 0 {
-			fmt.Printf("%s--- Voltages ---%s\n", "", colorReset)
-			for _, v := range sensorData.Voltages {
-				fmt.Printf("%-25s %7.2f %s\n", v.Name, v.Value, v.Unit)
+			fmt.Print("Volt: ")
+			for i, v := range sensorData.Voltages {
+				if i > 0 {
+					fmt.Print(" ")
+				}
+				fmt.Printf("%s=%.2f%s", v.Name, v.Value, v.Unit)
+				if i >= 5 {
+					if len(sensorData.Voltages) > 6 {
+						fmt.Print(" ...")
+					}
+					break
+				}
 			}
 			fmt.Println()
 		}
 
 		if len(sensorData.Power) > 0 {
-			fmt.Printf("%s--- Power ---%s\n", "", colorReset)
-			for _, p := range sensorData.Power {
-				fmt.Printf("%-25s %7.1f %s\n", p.Name, p.Value, p.Unit)
+			fmt.Print("Power: ")
+			for i, p := range sensorData.Power {
+				if i > 0 {
+					fmt.Print(" ")
+				}
+				fmt.Printf("%s=%.1f%s", p.Name, p.Value, p.Unit)
+				if i >= 5 {
+					if len(sensorData.Power) > 6 {
+						fmt.Print(" ...")
+					}
+					break
+				}
 			}
 			fmt.Println()
 		}
