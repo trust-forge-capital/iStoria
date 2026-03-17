@@ -27,10 +27,12 @@ build-all:
 	GOOS=darwin GOARCH=arm64 go build ${LDFLAGS} -o $(DIST)/istoria-darwin-arm64 .
 	@echo "Building for macOS (amd64)..."
 	GOOS=darwin GOARCH=amd64 go build ${LDFLAGS} -o $(DIST)/istoria-darwin-amd64 .
-	@echo "Building for Linux..."
-	GOOS=linux GOARCH=amd64 go build ${LDFLAGS} -o $(DIST)/istoria-linux .
+	@echo "Building for Linux (amd64)..."
+	GOOS=linux GOARCH=amd64 go build ${LDFLAGS} -o $(DIST)/istoria-linux-amd64 .
+	@echo "Building for Linux (arm64)..."
+	GOOS=linux GOARCH=arm64 go build ${LDFLAGS} -o $(DIST)/istoria-linux-arm64 .
 	@echo "Building for Windows..."
-	GOOS=windows GOARCH=amd64 go build ${LDFLAGS} -o $(DIST)/istoria.exe .
+	GOOS=windows GOARCH=amd64 go build ${LDFLAGS} -o $(DIST)/istoria-windows-amd64.exe .
 	@echo "Build complete!"
 
 # Run tests
