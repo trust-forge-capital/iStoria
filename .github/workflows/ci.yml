@@ -136,7 +136,7 @@ jobs:
         CHANGELOG=$(git log --pretty=format:"- %s (%h)" -n 20)
         
         cat << EOF > release_body.md
-        ## iStoria v${TAG_VERSION}
+        ## iStoria ${TAG_VERSION}
         
         Cross-platform hardware monitoring CLI
         
