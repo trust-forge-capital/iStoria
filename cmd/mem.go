@@ -47,43 +47,30 @@ var memCmd = &cobra.Command{
 			}
 
 			_ = noColor // reserved for future color support
-			noColorFlag := noColor
 
-			// Memory line
-			memUsedStr := fmt.Sprintf("%s/%s", formatBytes(memInfo.Used), formatBytes(memInfo.Total))
-			memBar := FmtBar(memInfo.UsedPercent, 10, noColorFlag)
-			fmt.Printf(" %-4s %-20s %s %s %s\n",
-				Colorize("Mem", ColorBold, noColorFlag),
-				Colorize(memUsedStr, ColorYellow, noColorFlag),
-				memBar,
-				FmtPercent(memInfo.UsedPercent, noColorFlag),
-				Colorize(formatBytes(memInfo.Available)+" avail", ColorGray, noColorFlag))
+			fmt.Printf("Mem: %s | Used:%s(%.0f%%) | Avail:%s | Free:%s\n",
+				formatBytes(memInfo.Total),
+				formatBytes(memInfo.Used),
+				memInfo.UsedPercent,
+				formatBytes(memInfo.Available),
+				formatBytes(memInfo.Free))
 
-			// Swap line
 			if memInfo.SwapTotal > 0 {
-				swapBar := FmtBar(float64(memInfo.SwapUsed)*100/float64(memInfo.SwapTotal), 10, noColorFlag)
-				fmt.Printf(" %-4s %-20s %s %s\n",
-					Colorize("Swap", ColorBold, noColorFlag),
-					fmt.Sprintf("%s/%s", formatBytes(memInfo.SwapUsed), formatBytes(memInfo.SwapTotal)),
-					swapBar,
-					FmtPercent(float64(memInfo.SwapUsed)*100/float64(memInfo.SwapTotal), noColorFlag))
+				fmt.Printf("Swap: %s | Used:%s | Free:%s\n",
+					formatBytes(memInfo.SwapTotal),
+					formatBytes(memInfo.SwapUsed),
+					formatBytes(memInfo.SwapFree))
 			}
 
-			// macOS specific
 			if memInfo.Wired > 0 || memInfo.Compressed > 0 {
 				extra := ""
 				if memInfo.Wired > 0 {
-					extra += fmt.Sprintf("Wired:%s", formatBytes(memInfo.Wired))
+					extra += fmt.Sprintf(" Wired:%s", formatBytes(memInfo.Wired))
 				}
 				if memInfo.Compressed > 0 {
-					if extra != "" {
-						extra += " "
-					}
-					extra += fmt.Sprintf("Comp:%s", formatBytes(memInfo.Compressed))
+					extra += fmt.Sprintf(" Comp:%s", formatBytes(memInfo.Compressed))
 				}
-				fmt.Printf(" %-4s %s\n",
-					Colorize("OS", ColorBold, noColorFlag),
-					Colorize(extra, ColorGray, noColorFlag))
+				fmt.Printf("macOS:%s\n", extra)
 			}
 		}
 

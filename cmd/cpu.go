@@ -56,44 +56,25 @@ var cpuCmd = &cobra.Command{
 			}
 
 			_ = noColor // reserved for future color support
-			noColorFlag := noColor
 
-			// CPU model line
-			cpuModel := cpuInfo.Model
-			if len(cpuModel) > 25 {
-				cpuModel = cpuModel[:22] + "..."
-			}
-			cpuCores := fmt.Sprintf("%dC/%dT", cpuInfo.Cores, cpuInfo.Threads)
-			var cpuDetails string
+			line := fmt.Sprintf("CPU: %s | %dC/%dT", cpuInfo.Model, cpuInfo.Cores, cpuInfo.Threads)
 			if cpuInfo.AppleSilicon {
-				cpuDetails = fmt.Sprintf("P:%d E:%d", cpuInfo.PerformanceCores, cpuInfo.EfficiencyCores)
+				line += fmt.Sprintf(" | P:%d E:%d", cpuInfo.PerformanceCores, cpuInfo.EfficiencyCores)
 			}
 			if cpuInfo.Frequency > 0 {
-				cpuDetails += " " + formatHz(cpuInfo.Frequency)
+				line += fmt.Sprintf(" | %s", formatHz(cpuInfo.Frequency))
 			}
-			fmt.Printf(" %-3s %-25s %-12s %s\n",
-				Colorize("CPU", ColorBold, noColorFlag),
-				Colorize(cpuModel, ColorCyan, noColorFlag),
-				cpuCores,
-				cpuDetails)
+			fmt.Println(line)
+			fmt.Printf("Usage: %.1f%% | User: %.1f%% | Sys: %.1f%% | Idle: %.1f%%\n",
+				cpuInfo.UsagePercent, cpuInfo.UserPercent, cpuInfo.SystemPercent, cpuInfo.IdlePercent)
 
-			// Usage line
-			fmt.Printf(" %-3s %s\n",
-				Colorize("Usage", ColorBold, noColorFlag),
-				fmt.Sprintf("Total:%s User:%s Sys:%s Idle:%s",
-					FmtPercent(cpuInfo.UsagePercent, noColorFlag),
-					FmtPercent(cpuInfo.UserPercent, noColorFlag),
-					FmtPercent(cpuInfo.SystemPercent, noColorFlag),
-					FmtPercent(cpuInfo.IdlePercent, noColorFlag)))
-
-			// Per-core usage
 			if cpuPercent != nil && len(cpuPercent.PerCPU) > 0 {
-				fmt.Printf(" %-3s ", Colorize("Cores", ColorBold, noColorFlag))
+				fmt.Print("PerCore: ")
 				for i, usage := range cpuPercent.PerCPU {
 					if i > 0 {
 						fmt.Print(" ")
 					}
-					fmt.Printf("C%d:%s", i, FmtPercent(usage, noColorFlag))
+					fmt.Printf("C%d:%.0f%%", i, usage)
 					if i >= 7 {
 						if len(cpuPercent.PerCPU) > 8 {
 							fmt.Print(" ...")

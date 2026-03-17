@@ -41,7 +41,6 @@ var netCmd = &cobra.Command{
 		}
 
 		_ = noColor // reserved for future color support
-		noColorFlag := noColor
 
 		// Filter to show only interfaces with activity or valid IPs
 		var active []collect.NetInfo
@@ -55,23 +54,16 @@ var netCmd = &cobra.Command{
 		}
 
 		if len(active) > 0 {
-			fmt.Printf("%-6s %-15s %12s %12s\n", 
-				Colorize("Iface", ColorBold, noColorFlag),
-				Colorize("IP", ColorGray, noColorFlag),
-				Colorize("RX", ColorGray, noColorFlag),
-				Colorize("TX", ColorGray, noColorFlag))
+			fmt.Printf("%-8s %-15s %10s %10s\n", "Iface", "IP", "RX", "TX")
 			for _, ni := range active {
-				fmt.Printf("%-6s %-15s %12s %12s\n",
-					Colorize(ni.Name, ColorCyan, noColorFlag),
+				fmt.Printf("%-8s %-15s %10s %10s\n",
+					ni.Name,
 					ni.IP4,
-					Colorize(formatBytes(ni.RxBytes), ColorGreen, noColorFlag),
-					Colorize(formatBytes(ni.TxBytes), ColorYellow, noColorFlag))
+					formatBytes(ni.RxBytes),
+					formatBytes(ni.TxBytes))
 			}
 		}
-		fmt.Printf("%s %s | %s\n",
-			Colorize("Total:", ColorBold, noColorFlag),
-			Colorize("RX:"+formatBytes(netData.TotalRx), ColorGreen, noColorFlag),
-			Colorize("TX:"+formatBytes(netData.TotalTx), ColorYellow, noColorFlag))
+		fmt.Printf("Total: RX:%s | TX:%s\n", formatBytes(netData.TotalRx), formatBytes(netData.TotalTx))
 	},
 }
 
