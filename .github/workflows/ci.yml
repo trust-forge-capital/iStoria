@@ -71,6 +71,11 @@ jobs:
             goarch: amd64
             artifact: istoria-windows-amd64
             ext: .exe
+          - os: ubuntu-latest
+            goos: windows
+            goarch: arm64
+            artifact: istoria-windows-arm64
+            ext: .exe
     
     steps:
     - name: Checkout code
@@ -163,6 +168,7 @@ jobs:
           artifacts/istoria-linux-amd64
           artifacts/istoria-linux-arm64
           artifacts/istoria-windows-amd64.exe
+          artifacts/istoria-windows-arm64.exe
         draft: false
         prerelease: false
       env:
