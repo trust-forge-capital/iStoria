@@ -47,16 +47,30 @@ var diskCmd = &cobra.Command{
 			}
 
 			_ = noColor // reserved for future color support
+			noColorFlag := noColor
 
-			fmt.Printf("%-10s %8s %8s %8s %5s %s\n", "Disk", "Total", "Used", "Avail", "Use%", "Type")
+			// Header
+			fmt.Printf("%-6s %-25s %12s %s %s\n", 
+				Colorize("Disk", ColorBold, noColorFlag),
+				Colorize("Total/Used", ColorGray, noColorFlag),
+				Colorize("Avail", ColorGray, noColorFlag),
+				"Use%",
+				"Type")
 			for _, d := range diskInfo.Disks {
-				fmt.Printf("%-10s %8s %8s %8s %4.0f%% %s\n",
-					d.Path,
-					formatBytes(d.Total),
-					formatBytes(d.Used),
+				diskUsedStr := fmt.Sprintf("%s/%s", formatBytes(d.Used), formatBytes(d.Total))
+				diskBar := FmtBar(d.UsedPercent, 8, noColorFlag)
+				// Truncate path if too long
+				path := d.Path
+				if len(path) > 25 {
+					path = path[:22] + "..."
+				}
+				fmt.Printf("%-6s %-25s %12s %s %s %s\n",
+					Colorize(path, ColorCyan, noColorFlag),
+					diskUsedStr,
 					formatBytes(d.Available),
-					d.UsedPercent,
-					d.Filesystem)
+					diskBar,
+					FmtPercent(d.UsedPercent, noColorFlag),
+					Colorize(d.Filesystem, ColorGray, noColorFlag))
 			}
 		}
 

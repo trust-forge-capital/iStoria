@@ -88,30 +88,52 @@ var statCmd = &cobra.Command{
 			}
 
 			_ = noColor // reserved for future color support
+			noColorFlag := noColor
 
-			fmt.Printf("Host: %s | OS: %s/%s | Up: %s | Kernel: %s\n", platform.Hostname, platform.OS, platform.Arch, statInfo.Uptime, platform.Kernel)
+			// Host line with alignment
+			hostStr := fmt.Sprintf("%s %s/%s | Up:%s | %s",
+				Colorize("●", ColorGreen, noColorFlag),
+				platform.OS, platform.Arch,
+				statInfo.Uptime,
+				platform.Kernel)
+			fmt.Printf("%-20s %s\n", Colorize(platform.Hostname, ColorBold, noColorFlag), hostStr)
 
-			cpuLine := fmt.Sprintf("CPU: %s | %dC/%dT", cpuInfo.Model, cpuInfo.Cores, cpuInfo.Threads)
-			if cpuInfo.AppleSilicon {
-				cpuLine += fmt.Sprintf(" | P:%d E:%d", cpuInfo.PerformanceCores, cpuInfo.EfficiencyCores)
+			// CPU line
+			cpuModel := cpuInfo.Model
+			if len(cpuModel) > 20 {
+				cpuModel = cpuModel[:17] + "..."
 			}
-			cpuLine += fmt.Sprintf(" | %.1f%%", cpuInfo.UsagePercent)
-			fmt.Println(cpuLine)
+			cpuCores := fmt.Sprintf("%dC/%dT", cpuInfo.Cores, cpuInfo.Threads)
+			var cpuDetails string
+			if cpuInfo.AppleSilicon {
+				cpuDetails = fmt.Sprintf("P:%d E:%d", cpuInfo.PerformanceCores, cpuInfo.EfficiencyCores)
+			}
+			cpuUsage := FmtPercent(cpuInfo.UsagePercent, noColorFlag)
+			fmt.Printf(" CPU %-20s %-12s %-12s %s\n",
+				Colorize(cpuModel, ColorCyan, noColorFlag),
+				cpuCores,
+				cpuDetails,
+				cpuUsage)
 
-			fmt.Printf("Mem: %s | Used:%s(%.0f%%) | Avail:%s\n",
-				formatBytes(memInfo.Total),
-				formatBytes(memInfo.Used),
-				memInfo.UsedPercent,
-				formatBytes(memInfo.Available))
+			// Memory line with usage bar
+			memUsedStr := fmt.Sprintf("%s/%s", formatBytes(memInfo.Used), formatBytes(memInfo.Total))
+			memBar := FmtBar(memInfo.UsedPercent, 10, noColorFlag)
+			fmt.Printf(" Mem %-20s %s %s %s\n",
+				Colorize(memUsedStr, ColorYellow, noColorFlag),
+				memBar,
+				FmtPercent(memInfo.UsedPercent, noColorFlag),
+				Colorize(formatBytes(memInfo.Available)+" avail", ColorGray, noColorFlag))
 
+			// Disk line (if available)
 			if len(diskInfo.Disks) > 0 {
 				d := diskInfo.Disks[0]
-				fmt.Printf("Disk: %s | %s | Used:%s(%.0f%%) | Avail:%s\n",
-					d.Path,
-					formatBytes(d.Total),
-					formatBytes(d.Used),
-					d.UsedPercent,
-					formatBytes(d.Available))
+				diskUsedStr := fmt.Sprintf("%s/%s", formatBytes(d.Used), formatBytes(d.Total))
+				diskBar := FmtBar(d.UsedPercent, 10, noColorFlag)
+				fmt.Printf(" Disk %-20s %s %s %s\n",
+					Colorize(d.Path, ColorCyan, noColorFlag),
+					diskUsedStr,
+					diskBar,
+					FmtPercent(d.UsedPercent, noColorFlag))
 			}
 
 			if statInfo.LoadAvg != "" {
