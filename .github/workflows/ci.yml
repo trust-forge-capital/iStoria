@@ -61,6 +61,11 @@ jobs:
             goarch: amd64
             artifact: istoria-linux-amd64
             ext: ''
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            artifact: istoria-linux-arm64
+            ext: ''
           - os: windows-latest
             goos: windows
             goarch: amd64
@@ -141,7 +146,8 @@ jobs:
         ### Downloads
         - macOS (Apple Silicon): istoria-darwin-arm64
         - macOS (Intel): istoria-darwin-amd64
-        - Linux: istoria-linux-amd64
+        - Linux (amd64): istoria-linux-amd64
+        - Linux (arm64): istoria-linux-arm64
         - Windows: istoria-windows-amd64.exe
         EOF
         
@@ -155,6 +161,7 @@ jobs:
           artifacts/istoria-darwin-arm64
           artifacts/istoria-darwin-amd64
           artifacts/istoria-linux-amd64
+          artifacts/istoria-linux-arm64
           artifacts/istoria-windows-amd64.exe
         draft: false
         prerelease: false

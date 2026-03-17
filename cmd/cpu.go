@@ -21,8 +21,18 @@ var cpuCmd = &cobra.Command{
 		c := collect.NewCollector()
 
 		runCPU := func() {
-			if liveConfig.Enabled && !liveConfig.NoClear {
-				ClearScreen()
+			if liveConfig.Enabled {
+				if !liveConfig.NoClear {
+					for i := 0; i < 4; i++ {
+						fmt.Print("\r\033[K")
+						if i < 3 {
+							fmt.Print("\033[A")
+						}
+					}
+					fmt.Print("\r")
+				} else {
+					fmt.Println()
+				}
 			}
 
 			cpuInfo, err := c.CPU()

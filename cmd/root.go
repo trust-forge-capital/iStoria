@@ -74,6 +74,27 @@ func SetupLiveMode() (chan os.Signal, func()) {
 }
 
 // ClearScreen clears the terminal screen
+// For smoother refresh, use cursor line manipulation when possible
 func ClearScreen() {
+	// \033[2J clears entire screen, \033[H moves cursor to home
 	fmt.Print("\033[2J\033[H")
+}
+
+// ClearLines clears n lines using cursor movement (smoother than full clear)
+func ClearLines(n int) {
+	// Hide cursor for smoother visual
+	fmt.Print("\033[?25l")
+	// Save cursor position
+	fmt.Print("\033[s")
+	for i := 0; i < n; i++ {
+		// Move up one line (except first iteration)
+		if i > 0 {
+			fmt.Print("\033[A")
+		}
+		// Clear the entire line
+		fmt.Print("\033[2K")
+	}
+	// Restore cursor to first line start
+	fmt.Print("\033[u")
+	// Note: caller should hide cursor or leave it visible as needed
 }

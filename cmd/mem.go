@@ -20,8 +20,18 @@ var memCmd = &cobra.Command{
 		c := collect.NewCollector()
 
 		runMem := func() {
-			if liveConfig.Enabled && !liveConfig.NoClear {
-				ClearScreen()
+			if liveConfig.Enabled {
+				if !liveConfig.NoClear {
+					for i := 0; i < 3; i++ {
+						fmt.Print("\r\033[K")
+						if i < 2 {
+							fmt.Print("\033[A")
+						}
+					}
+					fmt.Print("\r")
+				} else {
+					fmt.Println()
+				}
 			}
 
 			memInfo, err := c.Mem()

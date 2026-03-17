@@ -20,8 +20,18 @@ var diskCmd = &cobra.Command{
 		c := collect.NewCollector()
 
 		runDisk := func() {
-			if liveConfig.Enabled && !liveConfig.NoClear {
-				ClearScreen()
+			if liveConfig.Enabled {
+				if !liveConfig.NoClear {
+					for i := 0; i < 8; i++ {
+						fmt.Print("\r\033[K")
+						if i < 7 {
+							fmt.Print("\033[A")
+						}
+					}
+					fmt.Print("\r")
+				} else {
+					fmt.Println()
+				}
 			}
 
 			diskInfo, err := c.Disk()

@@ -42,16 +42,26 @@ var netCmd = &cobra.Command{
 
 		_ = noColor // reserved for future color support
 
-		fmt.Printf("%-8s %-15s %10s %10s\n", "Iface", "IP", "RX", "TX")
+		// Filter to show only interfaces with activity or valid IPs
+		var active []collect.NetInfo
 		for _, ni := range netData.Interfaces {
 			if ni.Name == "lo0" || ni.Name == "lo" {
 				continue
 			}
-			fmt.Printf("%-8s %-15s %10s %10s\n",
-				ni.Name,
-				ni.IP4,
-				formatBytes(ni.RxBytes),
-				formatBytes(ni.TxBytes))
+			if ni.RxBytes > 0 || ni.TxBytes > 0 || ni.IP4 != "" {
+				active = append(active, ni)
+			}
+		}
+
+		if len(active) > 0 {
+			fmt.Printf("%-8s %-15s %10s %10s\n", "Iface", "IP", "RX", "TX")
+			for _, ni := range active {
+				fmt.Printf("%-8s %-15s %10s %10s\n",
+					ni.Name,
+					ni.IP4,
+					formatBytes(ni.RxBytes),
+					formatBytes(ni.TxBytes))
+			}
 		}
 		fmt.Printf("Total: RX:%s | TX:%s\n", formatBytes(netData.TotalRx), formatBytes(netData.TotalTx))
 	},
